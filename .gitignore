@@ -1,0 +1,14 @@
+target/
+build/
+*.bin
+*.cue
+*.iso
+seeds/
+json_data/
+logic.dot
+*.iml
+.idea/
+.vscode/
+
+# Game assets shipped with the randomizer
+!src/main/resources/assets/*.bin
