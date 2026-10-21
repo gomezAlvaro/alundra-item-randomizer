@@ -205,6 +205,12 @@ public class RandomizerWorld {
 
         handleCrests(gameData);
 
+        // Magyscar cannot be left without Bombs (upstream #35), so entering it logically requires them
+        if (!options.magyscarRequiresBomb())
+            for (WorldPath path : paths)
+                if (path.origin().id().equals("overworld_c1") && path.destination().id().equals("magyscar"))
+                    path.requiredItems().removeIf(item -> item.id() == ITEM_BOMB);
+
         if (options.skipLastDungeon())
             paths.add(new WorldPath(node("lake_shrine_exterior"), node("melzas_fight")));
     }

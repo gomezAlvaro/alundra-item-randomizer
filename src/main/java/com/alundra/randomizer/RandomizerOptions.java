@@ -28,8 +28,8 @@ import static com.alundra.randomizer.game.ItemCodes.*;
 public class RandomizerOptions {
     /** Version byte embedded in permalinks (kept identical to the original randomizer v1.2 for compatibility) */
     public static final int PERMALINK_VERSION = 12;
-    /** Permalink version carrying the "ignore logic" flag */
-    public static final int PERMALINK_VERSION_IGNORE_LOGIC = 13;
+    /** Permalink version carrying the "ignore logic" and "Magyscar requires Bomb" flags */
+    public static final int PERMALINK_VERSION_EXTENDED = 13;
 
     // ------------- Game patching settings -------------
 
@@ -72,6 +72,8 @@ public class RandomizerOptions {
      * logic: the seed is not required to be completable
      */
     private boolean ignoreLogic = false;
+    /** If true, entering Magyscar logically requires Bombs, since it cannot be left without them (false = original v1.2 logic) */
+    private boolean magyscarRequiresBomb = true;
 
     private RandomizerOptions() {
     }
@@ -113,6 +115,8 @@ public class RandomizerOptions {
         rando.put("allowSpoilerLog", allowSpoilerLog);
         if (ignoreLogic)
             rando.put("ignoreLogic", true);
+        if (magyscarRequiresBomb)
+            rando.put("magyscarRequiresBomb", true);
 
         List<Object> startingInventoryNames = new ArrayList<>();
         for (int itemId : startingInventory)
@@ -163,6 +167,7 @@ public class RandomizerOptions {
             switch (entry.getKey()) {
                 case "allowSpoilerLog" -> allowSpoilerLog = value.asBoolean();
                 case "ignoreLogic" -> ignoreLogic = value.asBoolean();
+                case "magyscarRequiresBomb" -> magyscarRequiresBomb = value.asBoolean();
                 case "crestCount" -> crestCount = value.asInt() & 0xFF;
                 // "itemsDistributions" is the (misspelled) key written by the original randomizer's spoiler logs
                 case "itemsDistribution", "itemsDistributions" -> {
@@ -258,7 +263,8 @@ public class RandomizerOptions {
         BitstreamWriter bitpack = new BitstreamWriter();
 
         // Version 13 only differs from 12 by a trailing "ignore logic" flag, so permalinks stay compatible when unused
-        bitpack.packSmall(ignoreLogic ? PERMALINK_VERSION_IGNORE_LOGIC : PERMALINK_VERSION);
+        boolean extended = ignoreLogic || magyscarRequiresBomb;
+        bitpack.packSmall(extended ? PERMALINK_VERSION_EXTENDED : PERMALINK_VERSION);
         bitpack.packUInt32(seed);
         bitpack.pack(allowSpoilerLog);
 
@@ -279,8 +285,10 @@ public class RandomizerOptions {
         bitpack.packSmallMap(fixedItemSources);
         bitpack.packSmallVector(itemSourcesWithoutProgression);
         bitpack.packSmallVector(startingInventory);
-        if (ignoreLogic)
-            bitpack.pack(true);
+        if (extended) {
+            bitpack.pack(ignoreLogic);
+            bitpack.pack(magyscarRequiresBomb);
+        }
 
         return "a" + Base64.getEncoder().encodeToString(bitpack.bytes()) + "/";
     }
@@ -300,7 +308,7 @@ public class RandomizerOptions {
         BitstreamReader bitpack = new BitstreamReader(bytes);
 
         int version = bitpack.unpackUInt8();
-        if (version != PERMALINK_VERSION && version != PERMALINK_VERSION_IGNORE_LOGIC)
+        if (version != PERMALINK_VERSION && version != PERMALINK_VERSION_EXTENDED)
             throw new RandomizerException("This permalink comes from an incompatible version (" + version + ").");
 
         seed = bitpack.unpackUInt32();
@@ -325,7 +333,10 @@ public class RandomizerOptions {
         itemSourcesWithoutProgression.addAll(bitpack.unpackUInt16Vector());
         startingInventory.clear();
         startingInventory.addAll(bitpack.unpackUInt8Vector());
-        ignoreLogic = version == PERMALINK_VERSION_IGNORE_LOGIC && bitpack.unpackBool();
+        // Version 12 permalinks predate these flags and use the original logic
+        boolean extended = version == PERMALINK_VERSION_EXTENDED;
+        ignoreLogic = extended && bitpack.unpackBool();
+        magyscarRequiresBomb = extended && bitpack.unpackBool();
     }
 
     // ------------------------------------------------------------------------------------------------------
@@ -333,6 +344,7 @@ public class RandomizerOptions {
     public long seed() { return seed; }
     public boolean allowSpoilerLog() { return allowSpoilerLog; }
     public boolean ignoreLogic() { return ignoreLogic; }
+    public boolean magyscarRequiresBomb() { return magyscarRequiresBomb; }
     public int[] itemsDistribution() { return itemsDistribution; }
     public List<Integer> startingInventory() { return Collections.unmodifiableList(startingInventory); }
 

@@ -72,6 +72,19 @@ class RandomizationTest {
     }
 
     @Test
+    void magyscarRequiresBombByDefaultButNotInLegacyPermalinks() throws Exception {
+        Randomizer current = generate(defaultPreset(), 3);
+        assertTrue(current.options().magyscarRequiresBomb());
+        Randomizer fromLink = Randomizer.fromPermalink(current.options().permalink()).output(QUIET);
+        assertTrue(fromLink.options().magyscarRequiresBomb());
+
+        Randomizer legacy = Randomizer.fromPermalink(Json.parse(new String(
+                getClass().getResourceAsStream("/golden/cpp_reference_spoiler.json").readAllBytes(),
+                java.nio.charset.StandardCharsets.UTF_8)).get("permalink").asText());
+        assertFalse(legacy.options().magyscarRequiresBomb());
+    }
+
+    @Test
     void sameSeedGivesSameWorld() {
         String first = Json.dump(generate(defaultPreset(), 123456789L).spoilerJson());
         String second = Json.dump(generate(defaultPreset(), 123456789L).spoilerJson());
