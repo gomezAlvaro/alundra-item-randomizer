@@ -84,6 +84,13 @@ public class WorldShuffler {
     public void randomizeItems() {
         initItemPool();
 
+        if (options.ignoreLogic()) {
+            // Plando mode: fixed item sources are already in place, the rest is shuffled without checking logic
+            placeRemainingItems();
+            performSpecificTweaks();
+            return;
+        }
+
         solver.setup(world.spawnNode(), world.endNode(), world.startingInventory());
 
         boolean exploredNewNodes = true;
@@ -402,6 +409,10 @@ public class WorldShuffler {
                 continue;
             }
             generateItemLocationHint(hintSource);
+
+            // Without logic (plando), a hint source may be unreachable and no hint can be proven valid
+            if (hintSource.text().isEmpty())
+                hintSource.text("I have nothing to tell you.");
         }
     }
 

@@ -26,5 +26,13 @@ public class PatchChangeFlagChecks extends GamePatch {
         // Make the Sluice Key door check that Sluice Key is owned instead of checking that the chest containing
         // Sluice Key in vanilla game was opened
         data.setWordLE(0x567029A, 0x3100);
+
+        // Skip Septimus spawning on Overworld C2 once Magyscar is done (he blocks the Sanctuary stairs along with Ronan).
+        // Vanilla is "if the post-Magyscar story flag is off, skip this spawn" (opcode 0x31): replacing it with an
+        // unconditional goto (0x02) always skips it. Maps 331 and its Lars Crypt variant run the same script.
+        data.setBytes(0x364D4E, 0x02, 0x8B, 0x00);
+        data.setBytes(0x3652AE, 0x02, 0x2E, 0x00);
+        data.setBytes(0x494EE82, 0x02, 0x8B, 0x00);
+        data.setBytes(0x494F3E2, 0x02, 0x2E, 0x00);
     }
 }

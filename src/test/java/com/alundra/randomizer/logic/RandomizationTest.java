@@ -52,6 +52,26 @@ class RandomizationTest {
     }
 
     @Test
+    void ignoreLogicFillsEverythingAndSurvivesPermalink() throws Exception {
+        String text = new String(RandomizationTest.class.getResourceAsStream("/presets/default.json").readAllBytes(),
+                java.nio.charset.StandardCharsets.UTF_8);
+        String marker = "\"randomizerSettings\": {";
+        assertTrue(text.contains(marker));
+        JsonNode preset = Json.parse(text.replace(marker, marker + " \"ignoreLogic\": true,"));
+
+        Randomizer plando = generate(preset, 7);
+        assertTrue(plando.options().ignoreLogic());
+        for (ItemSource source : plando.world().itemSources())
+            assertNotNull(source.item(), "empty item source " + source.name());
+        for (HintSource hint : plando.world().hintSources().values())
+            assertFalse(hint.text().isEmpty());
+
+        Randomizer fromLink = Randomizer.fromPermalink(plando.options().permalink()).output(QUIET);
+        assertTrue(fromLink.options().ignoreLogic());
+        assertEquals(plando.options().permalink(), fromLink.options().permalink());
+    }
+
+    @Test
     void sameSeedGivesSameWorld() {
         String first = Json.dump(generate(defaultPreset(), 123456789L).spoilerJson());
         String second = Json.dump(generate(defaultPreset(), 123456789L).spoilerJson());
