@@ -1,6 +1,6 @@
 # Alundra + Ocarina of Time: setup for 3 players (each plays both games)
 
-Status: this is what works today. The Python patcher builds the game (the Java patcher is kept as an option). Alundra is not in upstream Archipelago, so everybody runs
+Status: this is what works today. The fork's Python patcher builds the game. Alundra is not in upstream Archipelago, so everybody runs
 the fork. Items you must read first are marked **Untested**.
 
 ## What each person needs
@@ -34,8 +34,7 @@ alundra_settings:
   rom_file: "C:/path/to/Alundra (USA) (v1.1).bin"
 ```
 
-The fork builds the game with its own Python patcher, so Java and the jar are not needed. (`use_java_randomizer: true`
-plus `randomizer_jar` switches back to the Java program.)
+The fork builds the game with its own Python patcher, so nothing else is needed.
 
 Use forward slashes in paths. Set the OoT ROM and BizHawk paths from the launcher as that game's guide says.
 
