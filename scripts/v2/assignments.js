@@ -298,4 +298,17 @@ module.exports = [
     ['casino', 784, 1284, 'riverside_casino', "'Wheel of Fortune' second reward"],
     // the basement is not drawn: pinned on the graveyard house
     ['sanctuary', 1771, 690, 'overworld_c2_graveyard_house', 'Chest in graveyard house basement'],
+    // Shops: no per-item spot exists, so items are pinned along the counter (Naomi) or in front of the door (Merrick)
+    ['inoa', 2321, 990, 'naomi_shop', 'Item #1'],
+    ['inoa', 2371, 990, 'naomi_shop', 'Item #2'],
+    ['inoa', 2421, 990, 'naomi_shop', 'Item #3'],
+    ['inoa', 2464, 990, 'naomi_shop', 'Item #4'],
+    ['world', 3345, 3335, 'merrick_shop_1', 'Item traded for 15 Gilded'],
+    ['world', 3369, 3335, 'merrick_shop_2', 'Item traded for 20 Gilded'],
+    ['world', 3393, 3335, 'merrick_shop_3', 'Item traded for 25 Gilded'],
+    ['world', 3417, 3335, 'merrick_shop_4', 'Item traded for 30 Gilded'],
+    ['world', 3345, 3361, 'merrick_shop_5', 'Item traded for 35 Gilded'],
+    ['world', 3369, 3361, 'merrick_shop_6', 'Item traded for 40 Gilded'],
+    ['world', 3393, 3361, 'merrick_shop_7', 'Item traded for 45 Gilded'],
+    ['world', 3417, 3361, 'merrick_shop_8', 'Item traded for 50 Gilded'],
 ];
