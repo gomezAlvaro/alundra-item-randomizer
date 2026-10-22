@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alundra World Map</title>
+<style>
+:root{--bg:#f6f4ef;--panel:#fff;--text:#222;--muted:#6b6b6b;--line:#b9b4a8;--gate:#d9822b;--border:#d8d3c6;--hit:#e5484d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181c;--panel:#22242a;--text:#e8e8ea;--muted:#9a9ca3;--line:#555862;--gate:#f0a04b;--border:#363943;--hit:#ff6b6f}}
+:root[data-theme="dark"]{--bg:#17181c;--panel:#22242a;--text:#e8e8ea;--muted:#9a9ca3;--line:#555862;--gate:#f0a04b;--border:#363943;--hit:#ff6b6f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
+#map{flex:1;position:relative;min-width:0}
+svg{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+svg.drag{cursor:grabbing}
+aside{width:340px;max-width:45vw;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.bar{padding:12px 16px;border-bottom:1px solid var(--border)}
+.bar h1{font-size:16px;margin:0 0 8px}
+input[type=search]{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)}
+label{display:inline-flex;gap:5px;align-items:center;color:var(--muted);font-size:12px;margin:8px 12px 0 0}
+#info{padding:12px 16px;overflow:auto;flex:1}
+#info h2{font-size:15px;margin:0}
+.sub{color:var(--muted);font-size:12px;margin-bottom:8px}
+ul{list-style:none;padding:0;margin:0}
+li{padding:6px 0;border-top:1px solid var(--border)}
+li b{display:block;font-weight:500}
+li span{color:var(--muted);font-size:12px}
+li.hit{color:var(--hit)}
+.edge{stroke:var(--line);stroke-width:1.5;fill:none}
+.edge.gate{stroke:var(--gate);stroke-dasharray:5 4}
+.node circle{stroke:var(--bg);stroke-width:2;cursor:pointer}
+.node text.cnt{font-size:10px;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node text.lbl{font-size:9px;fill:var(--muted);text-anchor:middle;pointer-events:none}
+.node.dim{opacity:.18}
+.node.sel circle{stroke:var(--text);stroke-width:3}
+.node.hit circle{stroke:var(--hit);stroke-width:3}
+.reg rect{opacity:.10;rx:14}
+.reg text{font-size:12px;font-weight:600;opacity:.75}
+.note{position:absolute;left:12px;bottom:10px;color:var(--muted);font-size:12px;background:var(--panel);padding:4px 8px;border-radius:6px;border:1px solid var(--border)}
+@media (max-width:700px){body{flex-direction:column}aside{width:100%;max-width:none;height:45vh;border-left:0;border-top:1px solid var(--border)}}
+</style>
+</head>
+<body>
+<div id="map"><svg id="svg"></svg><div class="note">Drag to pan · scroll to zoom · click a node · <span style="color:var(--gate)">orange dashed</span> = needs items</div></div>
+<aside>
+  <div class="bar">
+    <h1>Alundra – item locations</h1>
+    <input id="q" type="search" placeholder="Search item or location (e.g. Bomb, shop)">
+    <label><input type="checkbox" id="lbl" checked> node names</label>
+    <label><input type="checkbox" id="reg" checked> regions</label>
+    <div class="sub" id="stats" style="margin-top:8px"></div>
+  </div>
+  <div id="info"><div class="sub">Click a node to list its chests and rewards (vanilla contents shown).</div></div>
+</aside>
+<script>
+const D = /*DATA*/null;
+const S = 34, NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('svg');
+const el = (n, a = {}, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const itemName = i => typeof i === 'string' ? i : `${i.name} ×${i.quantity}`;
+
+const regionOf = {};
+D.regions.forEach((r, i) => r.nodeIds.forEach(id => regionOf[id] = i));
+const color = i => `hsl(${(i * 47) % 360} 62% 48%)`;
+const srcBy = {};
+D.sources.forEach(s => (srcBy[s.nodeId] ||= []).push(s));
+const pos = id => [D.nodes[id].graphPos[0] * S, -D.nodes[id].graphPos[1] * S];
+
+const view = el('g', {}, svg);
+const gReg = el('g', {}, view), gEdge = el('g', {}, view), gNode = el('g', {}, view);
+
+D.regions.forEach((r, i) => {
+  const pts = r.nodeIds.filter(id => D.nodes[id]).map(pos);
+  if (!pts.length) return;
+  const x0 = Math.min(...pts.map(p => p[0])) - 24, x1 = Math.max(...pts.map(p => p[0])) + 24;
+  const y0 = Math.min(...pts.map(p => p[1])) - 24, y1 = Math.max(...pts.map(p => p[1])) + 24;
+  const g = el('g', { class: 'reg' }, gReg);
+  el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, fill: color(i) }, g);
+  const t = el('text', { x: x0 + 6, y: y0 - 4, fill: color(i) }, g); t.textContent = r.name;
+});
+
+D.paths.forEach(p => {
+  if (!D.nodes[p.fromId] || !D.nodes[p.toId]) return;
+  const [x1, y1] = pos(p.fromId), [x2, y2] = pos(p.toId);
+  const gate = (p.requiredItems && p.requiredItems.length) || (p.requiredNodes && p.requiredNodes.length);
+  const e = el('line', { x1, y1, x2, y2, class: 'edge' + (gate ? ' gate' : '') }, gEdge);
+  if (gate) { const t = el('title', {}, e); t.textContent = 'Requires: ' + [...(p.requiredItems || []).map(itemName), ...(p.requiredNodes || [])].join(', '); }
+});
+
+const nodeEls = {};
+Object.keys(D.nodes).forEach(id => {
+  const [x, y] = pos(id), n = (srcBy[id] || []).length;
+  const g = el('g', { class: 'node', transform: `translate(${x},${y})` }, gNode);
+  el('circle', { r: 9 + Math.min(n, 12) * 0.6, fill: color(regionOf[id] ?? 0) }, g);
+  el('text', { class: 'cnt' }, g).textContent = n || '';
+  el('text', { class: 'lbl', y: 22 }, g).textContent = id.replace(/^overworld_/, '');
+  g.addEventListener('click', ev => { ev.stopPropagation(); select(id); });
+  g.addEventListener('pointerdown', ev => ev.stopPropagation());
+  nodeEls[id] = g;
+});
+
+const info = document.getElementById('info');
+let selected = null;
+function select(id) {
+  selected = id;
+  Object.values(nodeEls).forEach(g => g.classList.remove('sel'));
+  nodeEls[id].classList.add('sel');
+  const r = D.regions[regionOf[id]], list = srcBy[id] || [];
+  const q = query();
+  info.innerHTML = '';
+  const h = document.createElement('h2'); h.textContent = id; info.append(h);
+  const s = document.createElement('div'); s.className = 'sub';
+  s.textContent = `${r ? r.name : ''} · ${list.length} item source${list.length === 1 ? '' : 's'}`; info.append(s);
+  const ul = document.createElement('ul');
+  list.forEach(src => {
+    const li = document.createElement('li');
+    if (q && matches(src, id, q)) li.className = 'hit';
+    const b = document.createElement('b'); b.textContent = src.name.replace(/^[^:]+: /, ''); li.append(b);
+    const sp = document.createElement('span'); sp.textContent = 'Vanilla: ' + (src.vanillaItem ? itemName(src.vanillaItem) : '—'); li.append(sp);
+    ul.append(li);
+  });
+  info.append(ul);
+}
+
+const query = () => document.getElementById('q').value.trim().toLowerCase();
+const matches = (s, id, q) => (s.name + ' ' + itemName(s.vanillaItem || '') + ' ' + id).toLowerCase().includes(q);
+function filter() {
+  const q = query();
+  let hits = 0;
+  for (const id in nodeEls) {
+    const m = q && (srcBy[id] || []).some(s => matches(s, id, q));
+    if (m) hits++;
+    nodeEls[id].classList.toggle('hit', !!m);
+    nodeEls[id].classList.toggle('dim', !!q && !m);
+  }
+  document.getElementById('stats').textContent = q ? `${hits} node(s) match` : `${Object.keys(D.nodes).length} nodes · ${D.sources.length} item sources`;
+  if (selected) select(selected);
+}
+document.getElementById('q').addEventListener('input', filter);
+document.getElementById('lbl').addEventListener('change', e => document.querySelectorAll('.lbl').forEach(t => t.style.display = e.target.checked ? '' : 'none'));
+document.getElementById('reg').addEventListener('change', e => gReg.style.display = e.target.checked ? '' : 'none');
+filter();
+
+// pan / zoom
+let vx = 0, vy = 0, k = 1, drag = null;
+const apply = () => view.setAttribute('transform', `translate(${vx},${vy}) scale(${k})`);
+function fit() {
+  const b = view.getBBox(), w = svg.clientWidth, h = svg.clientHeight;
+  k = Math.min(w / (b.width + 80), h / (b.height + 80));
+  vx = w / 2 - (b.x + b.width / 2) * k; vy = h / 2 - (b.y + b.height / 2) * k; apply();
+}
+svg.addEventListener('pointerdown', e => { drag = { x: e.clientX - vx, y: e.clientY - vy }; svg.classList.add('drag'); });
+addEventListener('pointerup', () => { drag = null; svg.classList.remove('drag'); });
+addEventListener('pointermove', e => { if (drag) { vx = e.clientX - drag.x; vy = e.clientY - drag.y; apply(); } });
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = svg.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const f = Math.exp(-e.deltaY * 0.0015);
+  vx = mx - (mx - vx) * f; vy = my - (my - vy) * f; k *= f; apply();
+}, { passive: false });
+addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>
