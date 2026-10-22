@@ -15,7 +15,15 @@ public final class Patches {
     }
 
     public static List<GamePatch> buildRandomizerPatches(RandomizerOptions options) {
+        return buildRandomizerPatches(options, null);
+    }
+
+    /** @param archipelago if not null, the game is built to be played through an Archipelago client (no hints) */
+    public static List<GamePatch> buildRandomizerPatches(RandomizerOptions options, PatchArchipelago archipelago) {
         List<GamePatch> patches = new ArrayList<>();
+        // Must come first: it expects to be the first one injecting code inside the executable
+        if (archipelago != null)
+            patches.add(archipelago);
 
         patches.add(new PatchNewGame(options));
         patches.add(new PatchFixMapInconsistencies());
@@ -30,7 +38,8 @@ public final class Patches {
         patches.add(new PatchSetKingSnowDeathCount(options.kingSnowDeathCount()));
         patches.add(new PatchRemoveItemsFanfare());
         patches.add(new PatchFixItemNamesInTextboxes());
-        patches.add(new PatchApplyHintText());
+        if (archipelago == null)
+            patches.add(new PatchApplyHintText());
         patches.add(new PatchRemoveNavaInstances());
         patches.add(new PatchRemoveVideos());
         patches.add(new PatchEditCredits());
@@ -62,5 +71,10 @@ public final class Patches {
 
     public static void applyRandomizerPatches(GameFiles files, GameData gameData, RandomizerWorld world, RandomizerOptions options) {
         execute(buildRandomizerPatches(options), files, gameData, world);
+    }
+
+    public static void applyArchipelagoPatches(GameFiles files, GameData gameData, RandomizerWorld world, RandomizerOptions options,
+                                               PatchArchipelago archipelago) {
+        execute(buildRandomizerPatches(options, archipelago), files, gameData, world);
     }
 }

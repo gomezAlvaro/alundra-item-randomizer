@@ -145,7 +145,7 @@ public class PatchProgressiveItems extends GamePatch {
         return exe.injectCode(func);
     }
 
-    private static void replaceItemSprite(BinaryFile data, int itemToReplace, int itemSpriteToUse) {
+    static void replaceItemSprite(BinaryFile data, int itemToReplace, int itemSpriteToUse) {
         final long startingAddr = 0x830;
 
         // Get sprite pointer from source item

@@ -59,6 +59,14 @@ public class RandomizerWorld {
         throw new RandomizerException("No ItemSource with name '" + name + "'");
     }
 
+    /** @return the item source with the given name, not including the vanilla item suffix */
+    public ItemSource itemSourceByName(String name) {
+        for (ItemSource source : itemSources)
+            if (source.name().equals(name))
+                return source;
+        throw new RandomizerException("No ItemSource with name '" + name + "'");
+    }
+
     public ItemSource itemSource(int id) {
         if (id < 0 || id >= itemSources.size())
             throw new RandomizerException("No ItemSource with ID " + id);

@@ -144,3 +144,15 @@ src/main/resources/   logic data (JSON), default preset, japanese balance file
 
 Original randomizer, game research, logic and patches by **Dinopony** (@DinoponyRuns), MIT license. Java port under
 the same license.
+
+## Archipelago mode
+
+`--archipelago=<patch.json>` builds a game for an [Archipelago](https://archipelago.gg) multiworld instead of
+randomizing: the patch file is written by the Alundra APWorld (see `scripts/ap/`), and lists the item of each
+chest. Items of other worlds are shown as an "Archipelago item" that gives nothing. The patched game keeps a mailbox
+in RAM that the Archipelago client uses to give items and show messages, and the client detects opened chests with
+the story flag stored in each chest (`scripts/ap/extract_flags.js` extracts them from the disc data).
+
+```
+java -jar alundra-randomizer.jar --archipelago=<patch.json> --input=<disc.bin> --outputrom=<output.bin>
+```

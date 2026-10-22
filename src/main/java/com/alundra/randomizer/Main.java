@@ -32,6 +32,8 @@ public final class Main {
               --input=<path>         Original Alundra (USA) v1.1 disc image (.bin). Default: ./input.bin
               --outputrom=<path>     Output image path (.bin) or folder. Default: current folder, named after the seed.
               --outputlog=<path>     Spoiler log path (.json) or folder. Default: next to the output image.
+              --archipelago=<path>   Build a game for an Archipelago multiworld from the patch data (.json) written by the
+                                     Alundra APWorld, instead of randomizing. Use with --input and --outputrom.
               --only-logic           Only randomize and write the spoiler log, don't build a disc image.
               --seedcount=<n>        Generate several seeds in a row.
               --debuglog=<path>      Write the shuffler's step-by-step debug log (requires spoiler logs to be allowed).
@@ -70,6 +72,10 @@ public final class Main {
         }
 
         try {
+            if (args.contains("archipelago")) {
+                generateArchipelago(args);
+                return 0;
+            }
             int seedCount = Math.max(1, args.getInteger("seedcount", 1));
             for (int i = 0; i < seedCount; ++i)
                 generate(args, i);
@@ -138,6 +144,28 @@ public final class Main {
         System.out.println("\nHash sentence: " + hashSentence);
         System.out.println("\nPermalink: " + options.permalink());
         System.out.println("\nShare the permalink above with other people to enable them building the exact same seed.\n");
+    }
+
+    private static void generateArchipelago(ArgumentDictionary args) {
+        Path patchPath = Paths.get(args.getString("archipelago"));
+        JsonNode patchJson;
+        try {
+            patchJson = Json.parse(Files.readString(patchPath, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RandomizerException("Could not read Archipelago patch data '" + patchPath + "'", e);
+        }
+        Randomizer randomizer = Randomizer.fromArchipelago(patchJson);
+
+        Path outputRomPath = Paths.get(args.getString("outputrom", "."));
+        if (!outputRomPath.getFileName().toString().toLowerCase().endsWith(".bin")) {
+            String name = patchPath.getFileName().toString().replaceFirst("\\.[^.]*$", "");
+            outputRomPath = outputRomPath.resolve(name + ".bin");
+        }
+
+        Path inputPath = Paths.get(args.getString("input", "./input.bin"));
+        System.out.println("Checking input image...");
+        Path cuePath = randomizer.patchImage(inputPath, outputRomPath, !args.contains("noimagecheck"));
+        System.out.println("Archipelago game written to '" + outputRomPath + "' (cue sheet: '" + cuePath.getFileName() + "').");
     }
 
     private static long parseSeed(String value) {

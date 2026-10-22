@@ -8,6 +8,7 @@ import com.alundra.randomizer.iso.IsoRebuilder;
 import com.alundra.randomizer.logic.WorldShuffler;
 import com.alundra.randomizer.model.RandomizerWorld;
 import com.alundra.randomizer.patches.GameFiles;
+import com.alundra.randomizer.patches.PatchArchipelago;
 import com.alundra.randomizer.patches.Patches;
 import com.alundra.randomizer.tools.BinaryFile;
 import com.alundra.randomizer.tools.Json;
@@ -42,6 +43,8 @@ public class Randomizer {
     private PrintStream out = System.out;
     private WorldShuffler shuffler;
     private Map<String, Object> spoilerJson;
+    /** Not null when the world's items come from an Archipelago multiworld instead of from the shuffler */
+    private PatchArchipelago archipelago = null;
 
     private Randomizer(GameData gameData, RandomizerWorld world, RandomizerOptions options) {
         this.gameData = gameData;
@@ -56,6 +59,31 @@ public class Randomizer {
         RandomizerWorld world = new RandomizerWorld(gameData);
         RandomizerOptions options = RandomizerOptions.fromPreset(presetJson, seed, gameData, world);
         return new Randomizer(gameData, world, options);
+    }
+
+    /**
+     * Builds the game for an Archipelago multiworld. The patch data lists the items of the item sources that belong
+     * to the Archipelago world: {@code {"locations": [{"name": <item source name>, "item": <item name or null>}]}}.
+     * A null item means the location holds an item of another world. Item sources that are not listed keep their
+     * vanilla item.
+     */
+    public static Randomizer fromArchipelago(JsonNode patchJson) {
+        GameData gameData = new GameData();
+        RandomizerWorld world = new RandomizerWorld(gameData);
+        RandomizerOptions options = RandomizerOptions.fromPreset(Json.parseResource("/presets/archipelago.json"), 0, gameData, world);
+        Randomizer randomizer = new Randomizer(gameData, world, options);
+        randomizer.archipelago = new PatchArchipelago(patchJson.get("player_name").asText(), patchJson.get("seed_name").asText());
+
+        for (var source : world.itemSources())
+            source.item(source.vanillaItem());
+        for (JsonNode location : patchJson.get("locations")) {
+            var source = world.itemSourceByName(location.get("name").asText());
+            JsonNode item = location.get("item");
+            source.item(item == null || item.isNull()
+                    ? gameData.item(PatchArchipelago.ITEM_AP_PLACEHOLDER)
+                    : gameData.item(item.asText()));
+        }
+        return randomizer;
     }
 
     public static Randomizer fromPermalink(String permalink) {
@@ -93,10 +121,13 @@ public class Randomizer {
      * @return the patched files
      */
     public GameFiles patchFiles(java.util.function.Function<String, byte[]> originalFileLoader) {
-        if (shuffler == null)
+        if (shuffler == null && archipelago == null)
             throw new IllegalStateException("randomize() must be called before patching");
         GameFiles files = new GameFiles(originalFileLoader);
-        Patches.applyRandomizerPatches(files, gameData, world, options);
+        if (archipelago != null)
+            Patches.applyArchipelagoPatches(files, gameData, world, options, archipelago);
+        else
+            Patches.applyRandomizerPatches(files, gameData, world, options);
         return files;
     }
 

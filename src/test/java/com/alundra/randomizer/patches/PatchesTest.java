@@ -79,12 +79,16 @@ class PatchesTest {
         return file.toByteArray();
     }
 
-    private static Map<String, byte[]> fakeGameFiles() {
+    static Map<String, byte[]> fakeGameFiles() {
+        return fakeGameFiles(0x80010000L);
+    }
+
+    static Map<String, byte[]> fakeGameFiles(long exeTextAddress) {
         Map<String, byte[]> files = new HashMap<>();
         files.put(GameFiles.DATAS_BIN, fakeDatas());
         byte[] exe = randomBytes(0xB8000, 7);
         ByteArray exeArray = ByteArray.wrap(exe);
-        exeArray.setLongLE(0x18, 0x80010000L);
+        exeArray.setLongLE(0x18, exeTextAddress);
         exeArray.setLongLE(0x1C, exe.length - 0x800);
         files.put(GameFiles.MAIN_EXE, exe);
         files.put(GameFiles.BOOT_EXE, randomBytes(0x7000, 8));
