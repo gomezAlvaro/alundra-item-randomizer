@@ -26,7 +26,7 @@ h1{font-size:15px;margin:0;padding:12px 14px 8px}
 .grid i{position:absolute;border:1px solid rgba(255,255,255,.35)}
 .grid b{position:absolute;color:#fff;font-size:calc(40px*var(--inv));text-shadow:0 0 6px #000;opacity:.7}
 .mk{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid #fff;transform:scale(var(--inv));box-shadow:0 0 0 2px #000,0 0 8px #000;cursor:pointer;display:grid;place-items:center;font-size:10px;font-weight:700;color:#000}
-.mk.life{background:#ff4d5e}.mk.falcon{background:#f6c445}.mk.gilder{background:#5fd068}.mk.cons{background:#b9bcc6}.mk.key{background:#5aa7ff}
+.mk.g{background:#3ecf5a}.mk.y{background:#f2d230}.mk.r{background:#ef4b4b}
 .mk.hl{animation:pulse 1s 3}
 .mk.dim{opacity:.15}
 .mk.cand{background:transparent;border:2px dashed var(--edit);box-shadow:none;color:var(--edit);width:26px;height:26px;margin:-13px 0 0 -13px}
@@ -71,10 +71,9 @@ body.edit #editbar{display:block}
 </aside>
 <script>
 const D = /*DATA*/null;
-const CAT = { life: 'Life Vessel', falcon: 'Gilded Falcon', gilder: 'Gilder', cons: 'Consumable', key: 'Key / equipment' };
-const CONS = new Set(['Herbs', 'Strength Tonic', 'Strength Elixyr', 'Magic Elixyr', 'Wonder Essence', 'Magic Seed']);
+const CAT = { g: 'Exact chest', y: 'Chest here, which one unsure', r: 'Approximate location' };
 const itemName = i => !i ? '—' : typeof i === 'string' ? i : `${i.name} ×${i.quantity}`;
-const category = s => { const n = typeof s.item === 'string' ? s.item : s.item && s.item.name || ''; return n === 'Life Vessel' ? 'life' : n === 'Gilded Falcon' ? 'falcon' : /Gilder$/.test(n) ? 'gilder' : CONS.has(n) ? 'cons' : 'key'; };
+const conf = i => (place(i) && place(i).c) || 'g';
 const $ = id => document.getElementById(id);
 const store = { get() { try { return JSON.parse(localStorage.getItem('alundra-atlas-v2')) || {}; } catch (e) { return {}; } }, set(v) { try { localStorage.setItem('alundra-atlas-v2', JSON.stringify(v)); } catch (e) {} } };
 
@@ -126,14 +125,14 @@ function render() {
   const list = allSourcesOn(cur), srcs = $('srcs'); srcs.innerHTML = '';
   let placed = 0;
   list.forEach(i => {
-    const s = D.sources[i], p = place(i), onMap = p && p.map === cur.id, cat = category(s);
+    const s = D.sources[i], p = place(i), onMap = p && p.map === cur.id, cat = conf(i);
     const hit = !q || (s.name + ' ' + itemName(s.item) + ' ' + s.node).toLowerCase().includes(q);
     if (onMap) {
       placed++;
       const m = document.createElement('div');
       m.className = `mk ${cat}` + (hit ? '' : ' dim') + (hidden.has(cat) ? ' dim' : '');
       m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.dataset.i = i;
-      m.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b><br>${esc(itemName(s.item))}<br><i>${esc(D.regionOf[i])}</i>`);
+      m.onmouseenter = e => tip(e, `<b>${esc(s.name)}</b><br>${esc(itemName(s.item))}<br><i>${esc(D.regionOf[i])} · ${CAT[cat]}</i>`);
       m.onmouseleave = () => $('tip').style.display = 'none';
       m.onpointerdown = e => { if (!editing) return; e.stopPropagation(); startDrag(e, i, m); };
       m.oncontextmenu = e => { if (!editing) return; e.preventDefault(); setPlace(i, null); };
@@ -169,7 +168,7 @@ const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', 
 function tip(e, html) { const t = $('tip'); t.innerHTML = html; t.style.display = 'block'; t.style.left = e.clientX + 14 + 'px'; t.style.top = e.clientY + 14 + 'px'; }
 
 function setPlace(i, p) {
-  edits[i] = p ? { ...p } : null;
+  edits[i] = p ? { c: 'g', ...p } : null;
   if (!p && !(i in D.placements)) delete edits[i];
   store.set(edits); selected = p ? null : selected; renderMaps(); render();
 }

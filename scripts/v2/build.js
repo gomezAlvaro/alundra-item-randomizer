@@ -64,12 +64,27 @@ const maps = MAPS.map(m => {
 });
 
 const placements = {};
-for (const [mapId, xOrCandidate, y, nodeId, prefix] of assignments) {
+for (const [mapId, xOrCandidate, y, nodeId, prefix, forced] of assignments) {
     const index = sources.findIndex((s, i) => (s.nodeId === nodeId || s.nodeId.startsWith(nodeId + '_')) && s.name.replace(/^[^:]+: /, '').startsWith(prefix) && !placements[i]);
     if (index < 0) throw new Error(`No source matches ${nodeId} / ${prefix}`);
     // '#n' refers to the n-th (1-based) chest ChestMatcher detected on that map, in the numbering of candidates.json
     const [x, py] = typeof xOrCandidate === 'string' ? maps.find(m => m.id === mapId).candidates[Number(xOrCandidate.slice(1)) - 1] : [xOrCandidate, y];
-    placements[index] = { map: mapId, x, y: py };
+    placements[index] = { map: mapId, x, y: py, c: forced || '' };
+}
+
+// Confidence colours: g = exact chest identified, y = a chest is there but which source it is is a guess, r = approximate pin.
+// A source is 'y' when other sources on the same map hold the same vanilla item and nothing (position on the open overworld) tells them apart.
+const reviewed = require('./confidence.js');
+const itemKey = s => JSON.stringify(s.vanillaItem);
+const POSITIONAL = /\b(left|right|top|bottom|upper|lower|first|second|third|middle|1st|2nd|3rd|leftmost|rightmost|elevated)\b/i;
+for (const i of Object.keys(placements)) {
+    const p = placements[i], s = sources[i];
+    if (p.c) continue;
+    const reviewedColor = reviewed[`${s.nodeId}|${s.name.replace(/^[^:]+: /, '')}`];
+    if (reviewedColor) { p.c = reviewedColor; continue; }
+    const twins = Object.keys(placements).filter(j => j !== i && placements[j].map === p.map && itemKey(sources[j]) === itemKey(s)).length;
+    const identifiable = p.map === 'world' && POSITIONAL.test(s.name);
+    p.c = twins > 0 && !identifiable ? 'y' : 'g';
 }
 
 const data = {
