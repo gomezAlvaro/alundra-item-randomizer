@@ -7,7 +7,6 @@ module.exports = [
     ['world', 2572, 561, 'overworld_c1', 'Leftmost chest'],
     ['world', 2908, 433, 'overworld_c1', 'Left chest in two chests group'],
     ['world', 2944, 433, 'overworld_c1', 'Right chest in two chests group'],
-    ['world', 3208, 761, 'overworld_c1_elevated_cavern', 'Chest accessible from cave'],
     ['world', 3520, 449, 'overworld_c1_right_sector', 'Chest in right section'],
     ['world', 3664, 793, 'overworld_c1_cliff', 'Chest on cliff'],
     // D1 (Torla sector)
@@ -70,8 +69,6 @@ module.exports = [
     ['world', 4458, 3527, 'overworld_d4_behind_long_boots', 'Chest on left swamp island'],
     ['world', 4830, 3359, 'overworld_d4', 'Right swamp chest'],
     // B4 (Nava's cabin sector)
-    ['world', 1418, 3463, 'overworld_b4_behind_bomb', 'Chest behind the tree stump'],
-    ['world', 2030, 2983, 'overworld_b4_behind_power_glove', 'Chest accessible from left map'],
     ['world', 2007, 3491, 'overworld_b4_behind_merman', 'Chest hidden behind cabins on the pier'],
     // E4 (Cliffs of Madness)
     ['world', 5096, 3423, 'overworld_e4_behind_merman', 'Chest at mid-level near waterfalls'],
@@ -104,7 +101,6 @@ module.exports = [
     // Ancient Shrine
     ['shrine', '#1', 0, 'ancient_shrine', "Chest in left aisle of main entrance room"],
     ['shrine', '#2', 0, 'ancient_shrine', "Chest in right aisle of main entrance room"],
-    ['shrine', '#5', 0, 'ancient_shrine', "Chest in room with sandcape holes and jars"],
     ['shrine', '#4', 0, 'ancient_shrine', "Chest near left exterior statue"],
     // Torla Mountain
     ['torla', '#1', 0, 'torla_mountain', "Boss reward chest"],
@@ -200,7 +196,6 @@ module.exports = [
     ['nirude', '#5', 0, 'nirude_lair', "Chest hidden in passageway behind statue"],
     ['nirude', '#7', 0, 'nirude_lair', "Right elevated chest in entrance room"],
     ['nirude', '#8', 0, 'nirude_lair', "Chest on left side of cavern hallway with statues"],
-    ['nirude', '#4', 0, 'nirude_lair', "Chest in room with spikes and moving platforms"],
     ['nirude', '#2', 0, 'nirude_lair', "Upper falling chest in elevated arena room"],
     ['nirude', '#3', 0, 'nirude_lair', "Lower falling chest in elevated arena room"],
     // Underground Waterway
@@ -320,7 +315,6 @@ module.exports = [
     ['lars', 150, 1440, 'lars_crypt', "Boss reward chest isolated to the left", 'r'],
     ['nava', 900, 1730, 'nava_keep', "Chest buried in ground", 'r'],
     ['nava', 210, 640, 'nava_keep', "Falling item revealed", 'r'],
-    ['world', 1875, 2080, 'overworld_b3', "King Snow reward", 'r'],
     // Hidden chests: no sprite is visible, pinned next to the room or chest they belong to
     ['world', 3000, 3170, 'overworld_c4', "Chest hidden among the trees near the middle", 'r'],
     ['world', 2390, 1190, 'overworld_b2', "Chest hidden behind musician's house", 'r'],
@@ -333,4 +327,11 @@ module.exports = [
     ['lakeext', 200, 700, 'lake_shrine_exterior', "Hidden chest in left aisle", 'r'],
     ['lakeint', 2560, 2520, 'lake_shrine_interior', "Chest hidden inside armor in right aisle", 'r'],
     ['lakeint', 3900, 2150, 'lake_shrine_interior', "Chest hidden below bricks in room with hole", 'r'],
+    // Hand-corrected in the page editor
+    ['world', 3208, 763, 'overworld_c1_elevated_cavern', "Chest accessible from cave", 'g'],
+    ['world', 2030, 2983, 'overworld_b4_behind_bomb', "Chest behind the tree stump", 'g'],
+    ['world', 1418, 3462, 'overworld_b4_behind_power_glove', "Chest accessible from left map", 'g'],
+    ['world', 1875, 2080, 'overworld_b3_behind_power_glove', "King Snow reward for dying a specified amount of times", 'g'],
+    ['shrine', 325, 4109, 'ancient_shrine_behind_cape', "Chest in room with sandcape holes and jars", 'g'],
+    ['nirude', 509, 1431, 'nirude_lair', "Chest in room with spikes and moving platforms", 'g'],
 ];
