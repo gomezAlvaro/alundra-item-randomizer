@@ -15,12 +15,22 @@ const assignments = require('./assignments.js');
 
 // Atlas image used for each randomizer region ("world" = the whole overworld). Regions without an entry (shops, casino) have no map.
 const MAPS = [
-    { id: 'world', file: 'World.png', title: 'Overworld', regions: /^Overworld/, only: s => !/^overworld_d2_(watermill|cave)/.test(s.nodeId) },
+    { id: 'world', file: 'World.png', title: 'Overworld', regions: /^Overworld/ },
     { id: 'watermill', file: 'Watermill.png', title: 'Watermill & caverns', regions: /^Overworld D2/, only: s => /^overworld_d2_(watermill|cave)/.test(s.nodeId) },
+    { id: 'sanctuary', file: 'SanctuaryArea.png', title: 'Sanctuary area & caves', regions: /^Overworld C2/ },
+    { id: 'coalarea', file: 'CoalMineArea.png', title: 'Coal Mine area & caves', regions: /^Overworld B2/, only: s => /^overworld_b2_(upper_mines|cave_to_lake)/.test(s.nodeId) },
+    { id: 'murgg', file: 'MurggWoods.png', title: 'Murgg Woods caves', regions: /^Overworld A2/, only: s => /bridge cave|circular cave|Stone Golem/.test(s.name) },
+    { id: 'mimics', file: 'Shack.png', title: 'Ruins & Mimics cave (A3)', regions: /^Overworld A3/, only: s => s.nodeId.startsWith('overworld_a3_mimics_cave') },
+    { id: 'cliffs', file: 'CliffsOfMadness.png', title: 'Cliffs of Madness well & Lurvy', regions: /^Overworld E4/, only: s => /^(overworld_e4_well|lurvy_shop)/.test(s.nodeId) },
+    { id: 'desertn', file: 'DespairDesertN.png', title: 'Despair Desert N caves', regions: /^Overworld E2/, only: s => /cave/.test(s.name) },
+    { id: 'deserts', file: 'DespairDesertS.png', title: 'Despair Desert S cave', regions: /^Overworld E3/, only: s => /cave/.test(s.name) },
+    { id: 'navacabin', file: 'BeachNavasCabin.png', title: "Nava's cabin", regions: /^Overworld B4/, only: s => /Nava's cabin/.test(s.name) },
+    { id: 'casino', file: 'PubPool.png', title: 'Riverside Casino', regions: /^Riverside Casino/ },
+    { id: 'waterway', file: 'UndergroundWaterway.png', title: 'Underground Waterway', regions: /^(Undeground Waterway|Overworld D2)/, only: s => s.nodeId.startsWith('underground_waterway') || /next to Underground Waterway/.test(s.name) },
+    { id: 'firemanor', file: 'FireManor.png', title: 'Fire Manor', regions: /^(Fire Manor|Overworld A4)/ },
     { id: 'inoa', file: 'InoaVillage.png', title: 'Inoa Village', regions: /^Inoa$/ },
     { id: 'lars', file: 'LarsCrypt.png', title: "Lars' Crypt", regions: /^Lars Crypt/ },
     { id: 'coal', file: 'InsideCoalMine.png', title: 'Coal Mine', regions: /^Coal Mine/ },
-    { id: 'waterway', file: 'UndergroundWaterway.png', title: 'Underground Waterway', regions: /^Undeground Waterway/ },
     { id: 'tarn', file: 'TarnsManor.png', title: "Tarn's Manor", regions: /^Tarn Manor/ },
     { id: 'coastal', file: 'CoastalCave.png', title: 'Coastal Cave', regions: /^Coastal Cave/ },
     { id: 'reptile', file: 'ReptileLair.png', title: 'Reptile Lair', regions: /^Reptile Lair/ },
@@ -31,7 +41,6 @@ const MAPS = [
     { id: 'torla', file: 'TorlaMountain.png', title: 'Torla Mountain', regions: /^Torla Mountain/ },
     { id: 'ice', file: 'MtTorlaIceManor.png', title: 'Mt. Torla & Ice Manor', regions: /^Ice Manor/ },
     { id: 'nirude', file: 'NirudesLair.png', title: "Nirude's Lair", regions: /^Nirude's Lair/ },
-    { id: 'firemanor', file: 'FireManor.png', title: 'Fire Manor', regions: /^Fire Manor/ },
     { id: 'tower', file: 'TowerOfTheGreatTree.png', title: 'Tower of the Great Tree', regions: /^Tower of the Great Tree/ },
     { id: 'lakeext', file: 'LakeShrine.png', title: 'Lake Shrine (exterior)', regions: /^Lake Shrine$/, only: s => s.nodeId.startsWith('lake_shrine_exterior') },
     { id: 'lakeint', file: 'LakeShrineInterior.png', title: 'Lake Shrine (interior)', regions: /^Lake Shrine$/, only: s => !s.nodeId.startsWith('lake_shrine_exterior') },
@@ -45,12 +54,12 @@ const pngSize = file => {
     return [b.readUInt32BE(16), b.readUInt32BE(20)];
 };
 
+const claims = (m, s) => m.regions.test(regionOfNode[s.nodeId] || '') && (!m.only || m.only(s));
+const ownerOf = s => (MAPS.find(m => m.id !== 'world' && claims(m, s)) || MAPS[0]);
 const maps = MAPS.map(m => {
     const [w, h] = pngSize(m.file);
     const ids = [];
-    sources.forEach((s, i) => {
-        if (m.regions.test(regionOfNode[s.nodeId] || '') && (!m.only || m.only(s))) ids.push(i);
-    });
+    sources.forEach((s, i) => { if (ownerOf(s) === m) ids.push(i); });
     return { id: m.id, file: m.file, title: m.title, w, h, sources: ids, candidates: candidates[m.file] || [] };
 });
 

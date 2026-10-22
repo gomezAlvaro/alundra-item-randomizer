@@ -142,11 +142,11 @@ function render() {
     }
     if (!hit && q) return;
     const row = document.createElement('div');
-    row.className = 'src ' + (onMap ? 'pl' : 'un') + (selected === i ? ' sel' : '');
+    row.className = 'src ' + (p ? 'pl' : 'un') + (selected === i ? ' sel' : '');
     row.dataset.i = i;
     row.innerHTML = `<b></b><span></span>`;
     row.firstChild.textContent = s.name;
-    row.lastChild.textContent = `${itemName(s.item)} · ${D.regionOf[i]}${onMap ? '' : ' · not placed'}`;
+    row.lastChild.textContent = `${itemName(s.item)} · ${D.regionOf[i]}${onMap ? '' : p ? ` · on ${mapById[p.map].title}` : ' · not placed'}`;
     row.onclick = () => { if (onMap) flash(i); if (editing) { selected = selected === i ? null : i; render(); } };
     srcs.append(row);
   });
