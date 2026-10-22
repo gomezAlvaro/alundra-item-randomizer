@@ -96,3 +96,12 @@ const data = {
 const html = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8').replace('/*DATA*/null', () => JSON.stringify(data));
 fs.writeFileSync(path.join(outDir, 'index.html'), html);
 console.log(`Wrote docs/v2/index.html: ${Object.keys(placements).length}/${sources.length} sources placed`);
+
+// Shared with the v3 tracker: the atlas maps and every source's pin, so edits made here reach both pages.
+const atlas = {
+    maps: maps.map(({ id, file, title, w, h }) => ({ id, file, title, w, h })),
+    placements,
+    sources: sources.map(s => ({ full: s.name, vanilla: typeof s.vanillaItem === 'string' ? s.vanillaItem : s.vanillaItem.name, node: s.nodeId })),
+};
+fs.mkdirSync(path.join(root, 'docs/data'), { recursive: true });
+fs.writeFileSync(path.join(root, 'docs/data/atlas.json'), JSON.stringify(atlas));
