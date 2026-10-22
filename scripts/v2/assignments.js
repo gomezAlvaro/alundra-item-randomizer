@@ -311,4 +311,14 @@ module.exports = [
     ['world', 3369, 3361, 'merrick_shop_6', 'Item traded for 40 Gilded'],
     ['world', 3393, 3361, 'merrick_shop_7', 'Item traded for 45 Gilded'],
     ['world', 3417, 3361, 'merrick_shop_8', 'Item traded for 50 Gilded'],
+    // Event rewards: pinned in the room where the boss or event happens
+    ['coastal', 2900, 1750, 'coastal_cave', "Left boss reward chest"],
+    ['nirude', 1860, 880, 'nirude_lair', "Boss reward chest"],
+    ['nirude', 1920, 880, 'nirude_lair', "Boss reward item given by Miming"],
+    ['tower', 1000, 900, 'great_tree_tower', "Left boss reward chest"],
+    ['tower', 1120, 900, 'great_tree_tower', "Right boss reward chest"],
+    ['lars', 150, 1440, 'lars_crypt', "Boss reward chest isolated to the left"],
+    ['nava', 900, 1730, 'nava_keep', "Chest buried in ground"],
+    ['nava', 210, 640, 'nava_keep', "Falling item revealed"],
+    ['world', 1875, 2080, 'overworld_b3', "King Snow reward"],
 ];
