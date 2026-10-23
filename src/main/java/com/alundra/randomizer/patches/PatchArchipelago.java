@@ -52,6 +52,16 @@ public class PatchArchipelago extends GamePatch {
     /** Sound effect played when an item is obtained */
     private static final int ITEM_JINGLE_SOUND = 0x34;
     private static final int MESSAGE_OFFSET = 20;
+    /** In the state of a chest or script giving an item (S1): the object holding it, and the offset of its story flag in it */
+    private static final int ITEM_OBJECT_OFFSET = 0x280;
+    private static final int ITEM_OBJECT_FLAG_OFFSET = 0x40;
+    /**
+     * Table of the texts of the items of other worlds, found after this magic: entries of a 32-bit story flag
+     * (0 ends the table) followed by a null-terminated text, with one more empty entry at the end.
+     */
+    public static final long TEXT_TABLE_MAGIC = 0x42544C41L;
+    public static final int TEXT_ENTRY_SIZE = 80;
+    public static final int TEXT_TABLE_ENTRIES = 320;
     /** Start of the branch of the game starting its ending: its first call is hooked to flag the goal as reached */
     private static final long ENDING_HOOK_CALL = 0x8002C70CL;
     private static final long ENDING_HOOK_ORIGINAL_TARGET = 0x8004AD18L;
@@ -160,10 +170,27 @@ public class PatchArchipelago extends GamePatch {
 
         exe.setCode(GIVE_ITEM_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(giveAddress, false));
 
-        // The client tells what the placeholder stands for, so the game's own box for it would only be a duplicate
+        // The box of a placeholder tells what it stands for: the text comes from a table, filled when the game is built,
+        // of (story flag of the chest, text). Without an entry, the game's own box is shown.
+        MipsCode table = new MipsCode();
+        table.addLongLE(TEXT_TABLE_MAGIC);
+        while (table.size() < 4 + TEXT_TABLE_ENTRIES * TEXT_ENTRY_SIZE + 4)
+            table.addLongLE(0);
+        long tableAddress = exe.injectCode(table) + 4;
+
         MipsCode message = new MipsCode();
         message.bne_(S3, ITEM_AP_PLACEHOLDER, "show");
-        message.jr(RA);
+        message.lw(T0, S1, ITEM_OBJECT_OFFSET, true);
+        message.lw(T0, T0, ITEM_OBJECT_FLAG_OFFSET, true);
+        message.set_(T1, tableAddress);
+        message.label_("search");
+        message.lw(T2, T1, 0, true);
+        message.beq(T2, ZERO, "show");
+        message.beq(T2, T0, "found");
+        message.addiu(T1, T1, TEXT_ENTRY_SIZE);
+        message.bra_("search");
+        message.label_("found");
+        message.addiu(A0, T1, 4);
         message.label_("show");
         message.j(FUN_SHOW_MESSAGE);
         long messageAddress = exe.injectCode(message);

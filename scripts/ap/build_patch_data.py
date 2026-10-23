@@ -100,6 +100,7 @@ def main() -> None:
                 print(f"{name}: {kind}, {len(patch)} bytes")
                 if name == "ALUN_CD.EXE":
                     manifest["mailbox_offset"] = patched.index(b"ALAP")
+                    manifest["text_table_offset"] = patched.index(b"ALTB") + 4
 
     sources = json.loads(re.sub(r"^\s*//.*$", "", open(os.path.join(ROOT, "src/main/resources/data/item_source.json"),
                                                          encoding="utf-8").read(), flags=re.M))
