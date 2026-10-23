@@ -18,6 +18,8 @@ public class ItemSource {
     private String name = "";
     /** The item contained inside this ItemSource */
     private Item item = null;
+    /** The item whose sprite is shown instead of the one of the contained item (null to show the latter) */
+    private Item spriteItem = null;
     /** The item contained inside this ItemSource in the base game */
     private Item vanillaItem = null;
     /** The logic node containing this ItemSource */
@@ -51,6 +53,9 @@ public class ItemSource {
 
     public Item item() { return item; }
     public void item(Item item) { this.item = item; }
+
+    public Item spriteItem() { return spriteItem; }
+    public void spriteItem(Item item) { this.spriteItem = item; }
 
     /** A source is empty if it contains no item, but not if it contains ITEM_NONE */
     public boolean isEmpty() { return item == null; }

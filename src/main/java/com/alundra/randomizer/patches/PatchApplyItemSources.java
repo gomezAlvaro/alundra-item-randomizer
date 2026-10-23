@@ -23,7 +23,8 @@ public class PatchApplyItemSources extends GamePatch {
                 data.setByte(addr, itemId);
 
             // Apply sprite ID addresses
-            int itemSpriteId = (itemId + 0x1E) & 0xFF;
+            int spriteItemId = source.spriteItem() != null ? source.spriteItem().id() : itemId;
+            int itemSpriteId = (spriteItemId + 0x1E) & 0xFF;
             for (long addr : source.spriteAddresses()) {
                 // If item is none, make it an inactive open chest
                 if (itemId == ITEM_NONE) {

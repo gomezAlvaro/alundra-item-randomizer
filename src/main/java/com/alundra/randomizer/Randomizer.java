@@ -64,8 +64,8 @@ public class Randomizer {
     /**
      * Builds the game for an Archipelago multiworld. The patch data lists the items of the item sources that belong
      * to the Archipelago world: {@code {"locations": [{"name": <item source name>, "item": <item name or null>}]}}.
-     * A null item means the location holds an item of another world. Item sources that are not listed keep their
-     * vanilla item.
+     * A null item means the location holds an item of another world, shown with the sprite of the optional "sprite" item
+     * (an Alundra item of another player). Item sources that are not listed keep their vanilla item.
      */
     public static Randomizer fromArchipelago(JsonNode patchJson) {
         GameData gameData = new GameData();
@@ -82,6 +82,10 @@ public class Randomizer {
             source.item(item == null || item.isNull()
                     ? gameData.item(PatchArchipelago.ITEM_AP_PLACEHOLDER)
                     : gameData.item(item.asText()));
+            // An item of another player's Alundra world keeps its own sprite
+            JsonNode sprite = location.get("sprite");
+            if (sprite != null && !sprite.isNull())
+                source.spriteItem(gameData.item(sprite.asText()));
         }
         return randomizer;
     }

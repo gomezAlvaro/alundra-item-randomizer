@@ -25,7 +25,8 @@ import static com.alundra.randomizer.tools.MipsRegister.*;
  *   +128 name of the multiworld seed (null-terminated, up to 63 characters)
  * </pre>
  * Once per frame, the game checks the mailbox, gives the requested item through its own item pickup routine, shows the
- * message if there is one and frees the mailbox. Items placed in other players' worlds are replaced by a placeholder item which gives nothing.
+ * message if there is one and frees the mailbox. Items placed in other players' worlds are replaced by a placeholder item which gives nothing
+ * and opens no box: the client announces what it stands for.
  */
 public class PatchArchipelago extends GamePatch {
     /** Where the mailbox ends up in RAM, as long as it is the first block injected in the executable */
@@ -43,6 +44,8 @@ public class PatchArchipelago extends GamePatch {
     private static final long FUN_OBTAIN_ITEM = 0x800344D4L;
     /** The only place where a chest or script gives an item: we hook it to ignore the placeholder item */
     private static final long GIVE_ITEM_CALL = 0x8007EB4CL;
+    /** Where a chest or script opens its "you got this item" box: S3 = item ID, A0 = text, A1 = 1 */
+    private static final long ITEM_MESSAGE_CALL = 0x8007EB14L;
     /** Opens a message box: A0 = text, A1 = 1 */
     private static final long FUN_SHOW_MESSAGE = 0x8004608CL;
     private static final long FUN_PLAY_SOUND = 0x8004A128L;
@@ -156,5 +159,15 @@ public class PatchArchipelago extends GamePatch {
         long giveAddress = exe.injectCode(give);
 
         exe.setCode(GIVE_ITEM_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(giveAddress, false));
+
+        // The client tells what the placeholder stands for, so the game's own box for it would only be a duplicate
+        MipsCode message = new MipsCode();
+        message.bne_(S3, ITEM_AP_PLACEHOLDER, "show");
+        message.jr(RA);
+        message.label_("show");
+        message.j(FUN_SHOW_MESSAGE);
+        long messageAddress = exe.injectCode(message);
+
+        exe.setCode(ITEM_MESSAGE_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(messageAddress, false));
     }
 }
