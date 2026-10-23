@@ -160,9 +160,20 @@ public class PatchArchipelago extends GamePatch {
         long goalAddress = exe.injectCode(goal);
         exe.setCode(ENDING_HOOK_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(goalAddress, false));
 
-        // Items of other worlds are shown as a placeholder which must not be added to the inventory
+        // Items of other worlds must not be added to the inventory, and their box tells what they are. They are the
+        // chests listed in a table, filled when the game is built, of (story flag of the chest, text). A chest holds
+        // either the placeholder or an item of Alundra whose sprite is shown for it. A chest of another world without
+        // an entry still gives nothing and shows the game's own box.
+        MipsCode table = new MipsCode();
+        table.addLongLE(TEXT_TABLE_MAGIC);
+        while (table.size() < 4 + TEXT_TABLE_ENTRIES * TEXT_ENTRY_SIZE + 4)
+            table.addLongLE(0);
+        long tableAddress = exe.injectCode(table) + 4;
+
         MipsCode give = new MipsCode();
-        give.bne_(A1, ITEM_AP_PLACEHOLDER, "give");
+        give.beq_(A1, ITEM_AP_PLACEHOLDER, "skip");
+        appendTableSearch(give, tableAddress, "give", "skip");
+        give.label_("skip");
         give.jr(RA);
         give.label_("give");
         give.j(FUN_OBTAIN_ITEM);
@@ -170,25 +181,8 @@ public class PatchArchipelago extends GamePatch {
 
         exe.setCode(GIVE_ITEM_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(giveAddress, false));
 
-        // The box of a placeholder tells what it stands for: the text comes from a table, filled when the game is built,
-        // of (story flag of the chest, text). Without an entry, the game's own box is shown.
-        MipsCode table = new MipsCode();
-        table.addLongLE(TEXT_TABLE_MAGIC);
-        while (table.size() < 4 + TEXT_TABLE_ENTRIES * TEXT_ENTRY_SIZE + 4)
-            table.addLongLE(0);
-        long tableAddress = exe.injectCode(table) + 4;
-
         MipsCode message = new MipsCode();
-        message.bne_(S3, ITEM_AP_PLACEHOLDER, "show");
-        message.lw(T0, S1, ITEM_OBJECT_OFFSET, true);
-        message.lw(T0, T0, ITEM_OBJECT_FLAG_OFFSET, true);
-        message.set_(T1, tableAddress);
-        message.label_("search");
-        message.lw(T2, T1, 0, true);
-        message.beq(T2, ZERO, "show");
-        message.beq(T2, T0, "found");
-        message.addiu(T1, T1, TEXT_ENTRY_SIZE);
-        message.bra_("search");
+        appendTableSearch(message, tableAddress, "show", "found");
         message.label_("found");
         message.addiu(A0, T1, 4);
         message.label_("show");
@@ -196,5 +190,22 @@ public class PatchArchipelago extends GamePatch {
         long messageAddress = exe.injectCode(message);
 
         exe.setCode(ITEM_MESSAGE_CALL - EXE_TEXT_RAM_ADDRESS + EXE_TEXT_FILE_OFFSET, new MipsCode().jal(messageAddress, false));
+    }
+
+    /**
+     * Looks for the story flag of the chest being opened (the state of a chest is in S1) in the text table. Branches to
+     * one of the labels, with T1 pointing at the entry when found.
+     */
+    private static void appendTableSearch(MipsCode code, long tableAddress, String notFoundLabel, String foundLabel) {
+        code.lw(T0, S1, ITEM_OBJECT_OFFSET, true);
+        code.lw(T0, T0, ITEM_OBJECT_FLAG_OFFSET, true);
+        code.set_(T1, tableAddress);
+        String search = "search_" + notFoundLabel;
+        code.label_(search);
+        code.lw(T2, T1, 0, true);
+        code.beq(T2, ZERO, notFoundLabel);
+        code.beq(T2, T0, foundLabel);
+        code.addiu(T1, T1, TEXT_ENTRY_SIZE);
+        code.bra_(search);
     }
 }
