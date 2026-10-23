@@ -76,7 +76,8 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as temp:
         template_json = os.path.join(temp, "template.json")
         with open(template_json, "w") as file:
-            json.dump({"game": "Alundra", "format": 1, "seed_name": "", "player": 1, "player_name": "",
+            # The hooks of the executable are added by the world itself, only its mailbox is reserved here
+            json.dump({"game": "Alundra", "format": 1, "seed_name": "", "player": 1, "player_name": "", "exe_hooks": False,
                        "locations": [{"name": name, "item": None} for name in locations]}, file)
         template_bin = os.path.join(temp, "template.bin")
         subprocess.run(["java", "-jar", JAR, f"--archipelago={template_json}", f"--input={disc}",
@@ -98,9 +99,6 @@ def main() -> None:
                 manifest["files"][name] = {"format": kind, "patch": patch_name, "original_size": len(original),
                                            "original_crc": zlib.crc32(original)}
                 print(f"{name}: {kind}, {len(patch)} bytes")
-                if name == "ALUN_CD.EXE":
-                    manifest["mailbox_offset"] = patched.index(b"ALAP")
-                    manifest["text_table_offset"] = patched.index(b"ALTB") + 4
 
     sources = json.loads(re.sub(r"^\s*//.*$", "", open(os.path.join(ROOT, "src/main/resources/data/item_source.json"),
                                                          encoding="utf-8").read(), flags=re.M))

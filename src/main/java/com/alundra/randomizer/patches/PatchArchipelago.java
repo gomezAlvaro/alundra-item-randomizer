@@ -75,10 +75,17 @@ public class PatchArchipelago extends GamePatch {
 
     private final String slotName;
     private final String seedName;
+    /** False to only reserve the mailbox in the executable: the Archipelago world adds the hooks itself */
+    private final boolean exeHooks;
 
     public PatchArchipelago(String slotName, String seedName) {
+        this(slotName, seedName, true);
+    }
+
+    public PatchArchipelago(String slotName, String seedName, boolean exeHooks) {
         this.slotName = slotName;
         this.seedName = seedName;
+        this.exeHooks = exeHooks;
     }
 
     @Override
@@ -111,6 +118,9 @@ public class PatchArchipelago extends GamePatch {
         if (mailboxAddress != MAILBOX_ADDRESS)
             throw new RandomizerException("The Archipelago patch must be the first one injecting code in the executable"
                     + " (mailbox at " + Long.toHexString(mailboxAddress) + ")");
+
+        if (!exeHooks)
+            return;
 
         MipsCode tick = new MipsCode();
         tick.addiu(SP, SP, -0x20);

@@ -65,14 +65,16 @@ public class Randomizer {
      * Builds the game for an Archipelago multiworld. The patch data lists the items of the item sources that belong
      * to the Archipelago world: {@code {"locations": [{"name": <item source name>, "item": <item name or null>}]}}.
      * A null item means the location holds an item of another world, shown with the sprite of the optional "sprite" item
-     * (an Alundra item of another player). Item sources that are not listed keep their vanilla item.
+     * (an Alundra item of another player). {@code "exe_hooks": false} only reserves the mailbox in the
+     * executable, leaving the rest of the Archipelago code to the world. Item sources that are not listed keep their vanilla item.
      */
     public static Randomizer fromArchipelago(JsonNode patchJson) {
         GameData gameData = new GameData();
         RandomizerWorld world = new RandomizerWorld(gameData);
         RandomizerOptions options = RandomizerOptions.fromPreset(Json.parseResource("/presets/archipelago.json"), 0, gameData, world);
         Randomizer randomizer = new Randomizer(gameData, world, options);
-        randomizer.archipelago = new PatchArchipelago(patchJson.get("player_name").asText(), patchJson.get("seed_name").asText());
+        randomizer.archipelago = new PatchArchipelago(patchJson.get("player_name").asText(), patchJson.get("seed_name").asText(),
+                patchJson.get("exe_hooks") == null || patchJson.get("exe_hooks").asBoolean());
 
         for (var source : world.itemSources())
             source.item(source.vanillaItem());
