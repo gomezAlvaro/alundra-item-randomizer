@@ -18,11 +18,57 @@ const chestFlags = JSON.parse(fs.readFileSync(path.join(__dirname, 'chest_flags.
 
 const ITEM_BASE = 0xA1000000 >>> 0, LOCATION_BASE = ITEM_BASE + 0x1000;
 const CRESTS = ['Ruby Crest', 'Sapphire Crest', 'Topaz Crest', 'Agate Crest', 'Emerald Crest', 'Garnet Crest', 'Diamond Crest'];
-const FILLER = new Set(['Herbs', 'Strength Tonic', 'Wonder Essence', '1 Gilder', '5 Gilder', '10 Gilder', '30 Gilder']);
+// Gilded Falcons only buy Merrick's untracked trades, so they are filler despite being needed by paths
+const FILLER = new Set(['Herbs', 'Strength Tonic', 'Wonder Essence', '1 Gilder', '5 Gilder', '10 Gilder', '30 Gilder', 'Gilded Falcon']);
+const GOAL_NODE = 'end';
+const itemName = i => typeof i === 'string' ? i : i.name;
 
+// Directed edges of the world graph: [from, to, path]
+const edges = [];
+for (const p of paths) {
+    edges.push([p.fromId, p.toId, p]);
+    if (p.twoWay) edges.push([p.toId, p.fromId, p]);
+}
+const needs = (p, item) => (p.requiredItems || []).some(i => itemName(i) === item);
+const reachable = usable => {
+    const seen = new Set(['inoa']);
+    for (let grown = true; grown;) {
+        grown = false;
+        for (const [from, to, p] of edges) {
+            if (seen.has(from) && !seen.has(to) && usable(p)) { seen.add(to); grown = true; }
+        }
+    }
+    return seen;
+};
+const everywhere = reachable(() => true);
+
+// An item is not progression when the regions only its paths lead to (requirements of other paths ignored) hold
+// nothing that matters (a tracked location, where any item can be placed, the goal, a region other paths need, an
+// untracked location whose vanilla item is progression), and are only left back to the single region they are
+// entered from. That's the case of Small Key -> Broken Armor -> Ancient Armor, and of Gilded Falcons -> Merrick's
+// trades. Removing an item can make another one useless, so this repeats until nothing changes.
 const requiredItems = new Set();
-for (const p of paths) for (const i of p.requiredItems || []) requiredItems.add(typeof i === 'string' ? i : i.name);
+for (const p of paths) for (const i of p.requiredItems || []) requiredItems.add(itemName(i));
+for (let changed = true; changed;) {
+    changed = false;
+    const matters = new Set([GOAL_NODE]);
+    for (const p of paths) for (const n of p.requiredNodes || []) matters.add(n);
+    for (const s of sources) if (chestFlags[s.name] || requiredItems.has(s.vanillaItem)) matters.add(s.nodeId);
+    for (const item of [...requiredItems]) {
+        if (CRESTS.includes(item)) continue;
+        const without = reachable(p => !needs(p, item));
+        const gated = [...everywhere].filter(n => !without.has(n));
+        const entries = new Set(), exits = new Set();
+        for (const [from, to] of edges) {
+            if (!gated.includes(from) && gated.includes(to)) entries.add(from);
+            if (gated.includes(from) && !gated.includes(to)) exits.add(to);
+        }
+        const deadEnd = !gated.some(n => matters.has(n)) && entries.size === 1 && [...exits].every(n => entries.has(n));
+        if (deadEnd) { requiredItems.delete(item); changed = true; }
+    }
+}
 for (const c of CRESTS) requiredItems.add(c);
+for (const f of FILLER) if (requiredItems.has(f)) throw new Error(`${f} is listed as filler but leads to progression`);
 
 // Preset item source names have the vanilla item appended, e.g. 'Merrick's Shop: ... (Spirit Wand)'
 const sourceName = presetName => {
@@ -56,11 +102,14 @@ lines.push('}', '');
 lines.push('REGIONS = ' + py(Object.keys(nodes)), '');
 
 lines.push('# (from, to, two_way, {item: count}, [required regions])');
+lines.push('# Items that are not progression are left out: Archipelago\'s logic never counts them, and what they open only');
+lines.push('# holds untracked locations with their vanilla items');
 lines.push('PATHS = [');
 for (const p of paths) {
     const need = {};
     for (const i of p.requiredItems || []) {
-        const name = typeof i === 'string' ? i : i.name;
+        const name = itemName(i);
+        if (!requiredItems.has(name)) continue;
         need[name] = (need[name] || 0) + (typeof i === 'string' ? 1 : i.quantity);
     }
     lines.push(`    (${py(p.fromId)}, ${py(p.toId)}, ${py(!!p.twoWay)}, ${py(need)}, ${py(p.requiredNodes || [])}),`);
