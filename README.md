@@ -140,6 +140,10 @@ src/main/java/com/alundra/randomizer/
 src/main/resources/   logic data (JSON), default preset, japanese balance file
 ```
 
+The item location maps and the seed tracker live in their own repository,
+[alundra-item-tracker](https://github.com/gomezAlvaro/alundra-item-tracker). It keeps a copy of the logic data in
+`src/main/resources/data`, so refresh it there (`scripts/sync_data.sh`) when that data changes.
+
 ## Credits
 
 Original randomizer, game research, logic and patches by **Dinopony** (@DinoponyRuns), MIT license. Java port under
