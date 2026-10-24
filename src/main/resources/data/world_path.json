@@ -462,7 +462,10 @@
     {
         "fromId": "overworld_b4_behind_bomb",
         "toId": "overworld_a4_right",
-        "twoWay": true
+        "twoWay": true,
+        "requiredItems": [
+            "Bomb"
+        ]
     },
     {
         "fromId": "overworld_b4_behind_bomb",
