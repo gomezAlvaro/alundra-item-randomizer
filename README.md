@@ -67,6 +67,9 @@ every setting with its documentation. Highlights:
 
 A spoiler log can also be used as a preset: its settings sections are read and the rest is ignored.
 
+[`presets/vanilla_crests.json`](presets/vanilla_crests.json) is the default preset with every crest kept in its
+original location (through `fixedItemSources`). In an Archipelago game, the `vanilla_crests` option does the same.
+
 ## How it works
 
 1. **Model** (`model/`, data in `src/main/resources/data/`): the world is a graph of *nodes* linked by *paths*
