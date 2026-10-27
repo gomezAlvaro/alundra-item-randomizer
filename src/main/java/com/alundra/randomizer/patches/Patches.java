@@ -48,6 +48,7 @@ public final class Patches {
         patches.add(new PatchEditGlobalStrings());
         patches.add(new PatchAdaptBlueChest());
         patches.add(new PatchSetCasinoWinCount(options.casinoWinCountForLastReward()));
+        patches.add(new PatchRigWheelOfFortune());
 
         if (options.splitBootsEffects())
             patches.add(new PatchSplitBootsEffects());
